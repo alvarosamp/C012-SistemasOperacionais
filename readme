@@ -1,7 +1,3 @@
-Aqui está o README para o código que você forneceu:
-
----
-
 # Simulação de Elevadores Multi-thread
 
 Este projeto simula o funcionamento de elevadores em um prédio utilizando threads para otimizar o transporte de passageiros e reduzir o tempo de espera. A simulação é implementada em Python e utiliza bibliotecas como `threading`, `time` e `random`.
@@ -79,11 +75,3 @@ A utilização de threads oferece os seguintes benefícios:
 - Execução simultânea das tarefas de transporte, sem bloqueios.
 - Maior eficiência no uso dos elevadores, com redução do tempo de espera.
 - Simulação realista do funcionamento de múltiplos elevadores em paralelo.
-
-## Conclusão
-
-Este código demonstra a utilização de threads em Python para simular de forma eficiente o transporte de passageiros em elevadores, oferecendo uma abordagem prática e realista para o gerenciamento de múltiplos elevadores em um ambiente de prédio.
-
----
-
-Você pode adicionar este README ao seu projeto para documentação. Se precisar de mais ajustes, me avise!
