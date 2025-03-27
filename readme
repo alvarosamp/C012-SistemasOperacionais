@@ -1,0 +1,89 @@
+Aqui está o README para o código que você forneceu:
+
+---
+
+# Simulação de Elevadores Multi-thread
+
+Este projeto simula o funcionamento de elevadores em um prédio utilizando threads para otimizar o transporte de passageiros e reduzir o tempo de espera. A simulação é implementada em Python e utiliza bibliotecas como `threading`, `time` e `random`.
+
+## Objetivo
+
+O objetivo é desenvolver um sistema de gerenciamento de elevadores que minimize o tempo de espera dos passageiros, proporcionando uma simulação realista e eficiente de elevadores operando simultaneamente em diferentes andares de um prédio. Além disso, busca-se reduzir o consumo de energia ao gerenciar a quantidade de elevadores de forma otimizada.
+
+## Estrutura do Código
+
+O código é composto pelas seguintes principais classes e funções:
+
+### Classes
+
+- **Elevador**: Representa um elevador que se move entre andares e transporta passageiros. Cada elevador é gerenciado por uma thread, permitindo a execução independente.
+  - **Atributos**:
+    - `id`: Identificador do elevador.
+    - `andar_atual`: Andar atual do elevador.
+    - `passageiros`: Lista de passageiros dentro do elevador.
+  - **Métodos**:
+    - `run()`: Método que inicia a operação do elevador, verificando constantemente se há passageiros para atender.
+    - `mover_para()`: Move o elevador para o andar de destino.
+    - `embarcar()`: Embarca passageiros no elevador.
+    - `levar_passageiros()`: Transporta os passageiros para o destino final.
+
+- **Passageiro**: Representa um passageiro que deseja utilizar o elevador. Cada passageiro tem um andar de origem e destino.
+  - **Atributos**:
+    - `id`: Identificador único do passageiro.
+    - `origem`: Andar de origem do passageiro.
+    - `destino`: Andar de destino do passageiro.
+
+### Funções
+
+- **gerar_passageiros()**: Função responsável por gerar novos passageiros de forma contínua e adicioná-los às filas de espera dos andares. Esta função é executada em uma thread separada.
+  
+- **simular_elevadores()**: Função que inicia a simulação dos elevadores. Ela recebe o número de elevadores a ser utilizado e gerencia a execução dos mesmos junto com a geração dos passageiros.
+
+## Como Funciona
+
+1. O programa cria um número configurável de elevadores, onde cada elevador é executado como uma thread.
+2. Os passageiros são gerados de maneira contínua e adicionados às filas de espera dos andares. A geração de passageiros também ocorre em uma thread separada.
+3. Cada elevador percorre os andares, coleta passageiros e os leva até o destino, de forma otimizada e paralela.
+4. A simulação continua até que todos os passageiros sejam atendidos.
+
+## Bibliotecas Utilizadas
+
+- `threading`: Para permitir a execução paralela dos elevadores e da geração dos passageiros.
+- `random`: Para gerar aleatoriamente os andares de origem e destino dos passageiros.
+- `time`: Para controlar o tempo de simulação e a movimentação dos elevadores.
+
+## Configuração
+
+As variáveis globais controlam a simulação:
+
+- `NUM_ANDARES`: Número de andares no prédio.
+- `NUM_ELEVADORES`: Número de elevadores disponíveis na simulação.
+- `CAPACIDADE_ELEVADOR`: Capacidade máxima de passageiros por elevador.
+- `TOTAL_PASSAGEIROS`: Número total de passageiros a serem atendidos.
+
+## Execução
+
+Para executar a simulação com diferentes números de elevadores, o código realiza as seguintes simulações:
+
+```python
+for num in [1, 2, 3]:
+    simular_elevadores(num)
+```
+
+Cada execução simula o funcionamento com 1, 2 e 3 elevadores, respectivamente.
+
+## Benefícios do Uso de Threads
+
+A utilização de threads oferece os seguintes benefícios:
+
+- Execução simultânea das tarefas de transporte, sem bloqueios.
+- Maior eficiência no uso dos elevadores, com redução do tempo de espera.
+- Simulação realista do funcionamento de múltiplos elevadores em paralelo.
+
+## Conclusão
+
+Este código demonstra a utilização de threads em Python para simular de forma eficiente o transporte de passageiros em elevadores, oferecendo uma abordagem prática e realista para o gerenciamento de múltiplos elevadores em um ambiente de prédio.
+
+---
+
+Você pode adicionar este README ao seu projeto para documentação. Se precisar de mais ajustes, me avise!
