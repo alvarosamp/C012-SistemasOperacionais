@@ -37,21 +37,20 @@ class Elevador(threading.Thread):
                 waiting_calls.sort(key=lambda x: abs(self.andar_atual - x[0]))
                 destino, lista_passageiros = waiting_calls[0]
 
-                # Penalidade antes da movimentação
                 if not usar_semaforo and len(lista_passageiros) > CAPACIDADE_ELEVADOR:
                     excesso = len(lista_passageiros) - CAPACIDADE_ELEVADOR
-                    penalidade = excesso * 0.1
-                    print(f"[ELEVADOR {self.id}] Penalidade antes do movimento: {excesso} excedentes → {penalidade:.2f}s")
+                    penalidade = excesso * 0.5
+                    print(f"[ELEVADOR {self.id}] Penalidade antes do movimento: {excesso} excedentes -> {penalidade:.2f}s")
                     time.sleep(penalidade)
 
                 self.mover_para(destino)
                 self.embarcar(lista_passageiros)
                 self.levar_passageiros()
             else:
-                time.sleep(0.5)
+                time.sleep(0.1)
 
     def mover_para(self, andar):
-        time.sleep(abs(self.andar_atual - andar) * 0.2)
+        time.sleep(abs(self.andar_atual - andar) * 0.05)
         self.andar_atual = andar
 
     def embarcar(self, lista_passageiros):
@@ -68,11 +67,10 @@ class Elevador(threading.Thread):
         elif self.estrategia == "PS":
             lista_passageiros.sort(key=lambda p: current_time - p.criacao, reverse=True)
 
-        # Penalidade durante o embarque
         if not usar_semaforo and len(lista_passageiros) > CAPACIDADE_ELEVADOR:
             excesso = len(lista_passageiros) - CAPACIDADE_ELEVADOR
-            penalidade = excesso * 0.1
-            print(f"[ELEVADOR {self.id}] Penalidade durante embarque: {excesso} excedentes → {penalidade:.2f}s")
+            penalidade = excesso * 0.5
+            print(f"[ELEVADOR {self.id}] Penalidade durante embarque: {excesso} excedentes -> {penalidade:.2f}s")
             time.sleep(penalidade)
 
         while lista_passageiros and len(self.passageiros) < CAPACIDADE_ELEVADOR:
@@ -86,10 +84,16 @@ class Elevador(threading.Thread):
         while self.passageiros:
             passageiro = self.passageiros.pop(0)
             self.mover_para(passageiro.destino)
-            passageiros_atendidos += 1
+            if fila_lock:
+                with fila_lock:
+                    passageiros_atendidos += 1
+                    if passageiros_atendidos == TOTAL_PASSAGEIROS:
+                        fim_simulacao = time.time()
+            else:
+                passageiros_atendidos += 1
+                if passageiros_atendidos == TOTAL_PASSAGEIROS:
+                    fim_simulacao = time.time()
             print(f"[ELEVADOR {self.id}] Passageiro {passageiro.id} desembarcou no andar {passageiro.destino}. Total atendidos: {passageiros_atendidos}")
-            if passageiros_atendidos == TOTAL_PASSAGEIROS:
-                fim_simulacao = time.time()
 
 class Passageiro:
     def __init__(self, id, origem, destino):
@@ -115,7 +119,7 @@ def gerar_passageiros():
                 fila_espera[origem].append(novo_passageiro)
             print(f"[GERADOR] Passageiro {novo_passageiro.id} criado (Origem: {origem}, Destino: {destino})")
             gerados += 1
-            time.sleep(random.uniform(0.3, 1.0))
+            time.sleep(random.uniform(0.01, 0.05))
 
 def simular_elevadores(num_elevadores, estrategia, com_semaforo):
     global fila_espera, passageiros_atendidos, inicio_simulacao, fim_simulacao, passageiro_counter, fila_lock, usar_semaforo
@@ -131,8 +135,8 @@ def simular_elevadores(num_elevadores, estrategia, com_semaforo):
 
     random.seed(42)
 
-    modo = "COM SEMÁFORO" if com_semaforo else "SEM SEMÁFORO"
-    print(f"\n=== Simulação {estrategia} ({modo}) com {num_elevadores} elevador(es) ===")
+    modo = "COM SEMAFORO" if com_semaforo else "SEM SEMAFORO"
+    print(f"\n=== Simulacao {estrategia} ({modo}) com {num_elevadores} elevador(es) ===")
     elevadores = [Elevador(i, estrategia) for i in range(num_elevadores)]
     for elevador in elevadores:
         elevador.start()
@@ -145,21 +149,20 @@ def simular_elevadores(num_elevadores, estrategia, com_semaforo):
     gerador.join()
 
     tempo_total = fim_simulacao - inicio_simulacao if fim_simulacao else 0
-    print(f"=== Fim da simulação ({estrategia}, {modo}) em {tempo_total:.2f} segundos ===\n")
+    print(f"=== Fim da simulacao ({estrategia}, {modo}) em {tempo_total:.2f} segundos ===\n")
     return tempo_total
 
-# Comparação entre SJF e PS com e sem semáforo
 tempos_sjf = {
-    "com_semaforo": simular_elevadores(num_elevadores=2, estrategia="SJF", com_semaforo=True),
-    "sem_semaforo": simular_elevadores(num_elevadores=2, estrategia="SJF", com_semaforo=False)
+    "com_semaforo": simular_elevadores(num_elevadores=4, estrategia="SJF", com_semaforo=True),
+    "sem_semaforo": simular_elevadores(num_elevadores=4, estrategia="SJF", com_semaforo=False)
 }
 
 tempos_ps = {
-    "com_semaforo": simular_elevadores(num_elevadores=2, estrategia="PS", com_semaforo=True),
-    "sem_semaforo": simular_elevadores(num_elevadores=2, estrategia="PS", com_semaforo=False)
+    "com_semaforo": simular_elevadores(num_elevadores=4, estrategia="PS", com_semaforo=True),
+    "sem_semaforo": simular_elevadores(num_elevadores=4, estrategia="PS", com_semaforo=False)
 }
 
-print("\n=== COMPARAÇÃO FINAL ===")
-print(f"SJF - Com Semáforo: {tempos_sjf['com_semaforo']:.2f}s | Sem Semáforo: {tempos_sjf['sem_semaforo']:.2f}s")
-print(f"PS  - Com Semáforo: {tempos_ps['com_semaforo']:.2f}s | Sem Semáforo: {tempos_ps['sem_semaforo']:.2f}s")
-print("\n=== FIM DA SIMULAÇÃO ===")
+print("\n=== COMPARACAO FINAL ===")
+print(f"SJF - Com Semaforo: {tempos_sjf['com_semaforo']:.2f}s | Sem Semaforo: {tempos_sjf['sem_semaforo']:.2f}s")
+print(f"PS  - Com Semaforo: {tempos_ps['com_semaforo']:.2f}s | Sem Semaforo: {tempos_ps['sem_semaforo']:.2f}s")
+print("\n=== FIM DA SIMULACAO ===")
