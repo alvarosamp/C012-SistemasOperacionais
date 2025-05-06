@@ -4,13 +4,15 @@ import random
 
 NUM_ANDARES = 10
 CAPACIDADE_ELEVADOR = 5
-TOTAL_PASSAGEIROS = 10
+TOTAL_PASSAGEIROS = 100
 
 fila_espera = {i: [] for i in range(NUM_ANDARES)}
 passageiros_atendidos = 0
 inicio_simulacao = None
 fim_simulacao = None
 passageiro_counter = 1
+usar_semaforo = True
+fila_lock = threading.Lock() if usar_semaforo else None
 
 class Elevador(threading.Thread):
     def __init__(self, id, estrategia):
@@ -25,10 +27,23 @@ class Elevador(threading.Thread):
         while True:
             if passageiros_atendidos >= TOTAL_PASSAGEIROS:
                 return
-            waiting_calls = [(andar, fila_espera[andar]) for andar in fila_espera if fila_espera[andar]]
+            if fila_lock:
+                with fila_lock:
+                    waiting_calls = [(andar, fila_espera[andar]) for andar in fila_espera if fila_espera[andar]]
+            else:
+                waiting_calls = [(andar, fila_espera[andar]) for andar in fila_espera if fila_espera[andar]]
+
             if waiting_calls:
                 waiting_calls.sort(key=lambda x: abs(self.andar_atual - x[0]))
                 destino, lista_passageiros = waiting_calls[0]
+
+                # Penalidade antes da movimentação
+                if not usar_semaforo and len(lista_passageiros) > CAPACIDADE_ELEVADOR:
+                    excesso = len(lista_passageiros) - CAPACIDADE_ELEVADOR
+                    penalidade = excesso * 0.1
+                    print(f"[ELEVADOR {self.id}] Penalidade antes do movimento: {excesso} excedentes → {penalidade:.2f}s")
+                    time.sleep(penalidade)
+
                 self.mover_para(destino)
                 self.embarcar(lista_passageiros)
                 self.levar_passageiros()
@@ -41,10 +56,24 @@ class Elevador(threading.Thread):
 
     def embarcar(self, lista_passageiros):
         current_time = time.time()
+        if fila_lock:
+            with fila_lock:
+                self._embarcar_passageiros(lista_passageiros, current_time)
+        else:
+            self._embarcar_passageiros(lista_passageiros, current_time)
+
+    def _embarcar_passageiros(self, lista_passageiros, current_time):
         if self.estrategia == "SJF":
             lista_passageiros.sort(key=lambda p: p.tempo_estimado)
         elif self.estrategia == "PS":
             lista_passageiros.sort(key=lambda p: current_time - p.criacao, reverse=True)
+
+        # Penalidade durante o embarque
+        if not usar_semaforo and len(lista_passageiros) > CAPACIDADE_ELEVADOR:
+            excesso = len(lista_passageiros) - CAPACIDADE_ELEVADOR
+            penalidade = excesso * 0.1
+            print(f"[ELEVADOR {self.id}] Penalidade durante embarque: {excesso} excedentes → {penalidade:.2f}s")
+            time.sleep(penalidade)
 
         while lista_passageiros and len(self.passageiros) < CAPACIDADE_ELEVADOR:
             passageiro = lista_passageiros.pop(0)
@@ -68,7 +97,7 @@ class Passageiro:
         self.origem = origem
         self.destino = destino
         self.tempo_estimado = abs(destino - origem)
-        self.criacao = time.time()  # usado como base para tempo de espera
+        self.criacao = time.time()
 
 def gerar_passageiros():
     global passageiro_counter
@@ -79,13 +108,21 @@ def gerar_passageiros():
         if origem != destino:
             novo_passageiro = Passageiro(passageiro_counter, origem, destino)
             passageiro_counter += 1
-            fila_espera[origem].append(novo_passageiro)
+            if fila_lock:
+                with fila_lock:
+                    fila_espera[origem].append(novo_passageiro)
+            else:
+                fila_espera[origem].append(novo_passageiro)
             print(f"[GERADOR] Passageiro {novo_passageiro.id} criado (Origem: {origem}, Destino: {destino})")
             gerados += 1
             time.sleep(random.uniform(0.3, 1.0))
 
-def simular_elevadores(num_elevadores, estrategia):
-    global fila_espera, passageiros_atendidos, inicio_simulacao, fim_simulacao, passageiro_counter
+def simular_elevadores(num_elevadores, estrategia, com_semaforo):
+    global fila_espera, passageiros_atendidos, inicio_simulacao, fim_simulacao, passageiro_counter, fila_lock, usar_semaforo
+
+    usar_semaforo = com_semaforo
+    fila_lock = threading.Lock() if usar_semaforo else None
+
     fila_espera = {i: [] for i in range(NUM_ANDARES)}
     passageiros_atendidos = 0
     passageiro_counter = 1
@@ -94,7 +131,8 @@ def simular_elevadores(num_elevadores, estrategia):
 
     random.seed(42)
 
-    print(f"\n=== Simulação {estrategia} com {num_elevadores} elevador(es) ===")
+    modo = "COM SEMÁFORO" if com_semaforo else "SEM SEMÁFORO"
+    print(f"\n=== Simulação {estrategia} ({modo}) com {num_elevadores} elevador(es) ===")
     elevadores = [Elevador(i, estrategia) for i in range(num_elevadores)]
     for elevador in elevadores:
         elevador.start()
@@ -107,9 +145,21 @@ def simular_elevadores(num_elevadores, estrategia):
     gerador.join()
 
     tempo_total = fim_simulacao - inicio_simulacao if fim_simulacao else 0
-    print(f"=== Fim da simulação ({estrategia}) em {tempo_total:.2f} segundos ===\n")
+    print(f"=== Fim da simulação ({estrategia}, {modo}) em {tempo_total:.2f} segundos ===\n")
     return tempo_total
 
-# Comparação entre SJF e PS
-for estrategia in ["SJF", "PS"]:
-    simular_elevadores(num_elevadores=2, estrategia=estrategia)
+# Comparação entre SJF e PS com e sem semáforo
+tempos_sjf = {
+    "com_semaforo": simular_elevadores(num_elevadores=2, estrategia="SJF", com_semaforo=True),
+    "sem_semaforo": simular_elevadores(num_elevadores=2, estrategia="SJF", com_semaforo=False)
+}
+
+tempos_ps = {
+    "com_semaforo": simular_elevadores(num_elevadores=2, estrategia="PS", com_semaforo=True),
+    "sem_semaforo": simular_elevadores(num_elevadores=2, estrategia="PS", com_semaforo=False)
+}
+
+print("\n=== COMPARAÇÃO FINAL ===")
+print(f"SJF - Com Semáforo: {tempos_sjf['com_semaforo']:.2f}s | Sem Semáforo: {tempos_sjf['sem_semaforo']:.2f}s")
+print(f"PS  - Com Semáforo: {tempos_ps['com_semaforo']:.2f}s | Sem Semáforo: {tempos_ps['sem_semaforo']:.2f}s")
+print("\n=== FIM DA SIMULAÇÃO ===")
