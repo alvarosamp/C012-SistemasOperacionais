@@ -4,7 +4,7 @@ import random
 
 NUM_ANDARES = 10
 CAPACIDADE_ELEVADOR = 5
-TOTAL_PASSAGEIROS = 100
+TOTAL_PASSAGEIROS = 300
 
 fila_espera = {i: [] for i in range(NUM_ANDARES)}
 passageiros_atendidos = 0
@@ -163,6 +163,6 @@ tempos_ps = {
 }
 
 print("\n=== COMPARACAO FINAL ===")
-print(f"SJF - Com Semaforo: {tempos_sjf['com_semaforo']:.2f}s | Sem Semaforo: {tempos_sjf['sem_semaforo']:.2f}s")
-print(f"PS  - Com Semaforo: {tempos_ps['com_semaforo']:.2f}s | Sem Semaforo: {tempos_ps['sem_semaforo']:.2f}s")
+print(f"SJF (short job first) - Com Semaforo: {tempos_sjf['com_semaforo']:.2f}s | Sem Semaforo: {tempos_sjf['sem_semaforo']:.2f}s")
+print(f"PS (priority server)  - Com Semaforo: {tempos_ps['com_semaforo']:.2f}s | Sem Semaforo: {tempos_ps['sem_semaforo']:.2f}s")
 print("\n=== FIM DA SIMULACAO ===")
